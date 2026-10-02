@@ -207,10 +207,19 @@ def classify_asm(path):
         return "linux_arm"
     if normalized == "crypto/hrss/asm/poly_rq_mul.S":
         return "linux_x86_64"
-    if normalized.startswith("third_party/fiat/asm/"):
-        return "linux_x86_64"
 
     return None
+
+
+def asm_platforms(path):
+    normalized = path[4:] if path.startswith("src/") else path
+
+    # The fiat assembly is written for both ELF and Mach-O.
+    if normalized.startswith("third_party/fiat/asm/"):
+        return ["apple_x86_64", "linux_x86_64"]
+
+    key = classify_asm(path)
+    return [] if key is None else [key]
 
 
 asm_outputs = {
@@ -236,8 +245,7 @@ for file in (
     + test_support.get("asm", [])
     + test_support.get("nasm", [])
 ):
-    key = classify_asm(file)
-    if key is not None:
+    for key in asm_platforms(file):
         asm_outputs[key].append(file)
 
 payload = {

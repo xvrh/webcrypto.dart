@@ -4,6 +4,9 @@
 * Upgrade `ffigen` and `hooks` versions.
 * Fixed native HKDF output-length validation to reject oversized requests
   before allocating memory.
+* Fixed the native build for x86_64 Apple targets (Intel macOS and the
+  x86_64 iOS simulator), which failed to link because the fiat assembly
+  sources were missing from their source list.
 
 # 0.6.1
 * Added Dart native build hooks and native asset lookup for the bundled
