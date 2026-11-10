@@ -87,7 +87,7 @@ extension on BoringArena {
   ) {
     final result = create();
     _checkOp(result.address != 0, fallback: 'allocation failed');
-    return using(result, release);
+    return register(result, release);
   }
 
   ffi.Pointer<RSA> createRSA() => create(ssl.RSA_new, ssl.RSA_free);
@@ -137,7 +137,7 @@ Future<Uint8List> _signStream(
   Stream<List<int>> data, {
   void Function(ffi.Pointer<EVP_PKEY_CTX> ctx)? config,
 }) {
-  return BoringArena.run((scope) async {
+  return BoringArena.using((scope) async {
     final ctx = scope.create(ssl.EVP_MD_CTX_new, ssl.EVP_MD_CTX_free);
     final pctx = config != null
         ? scope<ffi.Pointer<EVP_PKEY_CTX>>()
@@ -172,7 +172,7 @@ Future<bool> _verifyStream(
   Stream<List<int>> data, {
   void Function(ffi.Pointer<EVP_PKEY_CTX> ctx)? config,
 }) {
-  return BoringArena.run((scope) async {
+  return BoringArena.using((scope) async {
     // Create and initialize verification context
     final ctx = scope.create(ssl.EVP_MD_CTX_new, ssl.EVP_MD_CTX_free);
     final pctx = config != null
@@ -207,7 +207,7 @@ Future<bool> _verifyStream(
 
 /// Export private [key] as PKCS8.
 Uint8List _exportPkcs8Key(_EvpPKey key) {
-  return BoringArena.run((scope) {
+  return BoringArena.using((scope) {
     final cbb = scope.cbb();
     _checkOpIsOne(ssl.EVP_marshal_private_key.invoke(cbb, key));
     return cbb.toBytes();
@@ -216,7 +216,7 @@ Uint8List _exportPkcs8Key(_EvpPKey key) {
 
 /// Export public [key] as SPKI.
 Uint8List _exportSpkiKey(_EvpPKey key) {
-  return BoringArena.run((scope) {
+  return BoringArena.using((scope) {
     final cbb = scope.cbb();
     _checkOpIsOne(ssl.EVP_marshal_public_key.invoke(cbb, key));
     return cbb.toBytes();
