@@ -77,6 +77,20 @@ void _checkData(bool condition, {String? message, String? fallback}) {
 void _checkDataIsOne(int retval, {String? message, String? fallback}) =>
     _checkData(retval == 1, message: message, fallback: fallback);
 
+/// Validate that [value] fits Web IDL's `unsigned long` type.
+void _checkUnsignedLong(int value, String name) {
+  if (value < 0 || value > 0xffffffff) {
+    throw ArgumentError.value(value, name, 'must be between 0 and 4294967295');
+  }
+}
+
+/// Validate that [value] can be passed to a signed 32-bit native parameter.
+void _checkInt32(int value, String name) {
+  if (value < -0x80000000 || value > 0x7fffffff) {
+    throw ArgumentError.value(value, name, 'must fit a signed 32-bit integer');
+  }
+}
+
 extension on BoringArena {
   /// Call [create], return [T], and [release] when the arena is released.
   ///
@@ -172,6 +186,7 @@ Future<bool> _verifyStream(
   Stream<List<int>> data, {
   void Function(ffi.Pointer<EVP_PKEY_CTX> ctx)? config,
 }) {
+  final signatureSnapshot = Uint8List.fromList(signature);
   return BoringArena.using((scope) async {
     // Create and initialize verification context
     final ctx = scope.create(ssl.EVP_MD_CTX_new, ssl.EVP_MD_CTX_free);
@@ -191,8 +206,8 @@ Future<bool> _verifyStream(
     // Verify signature
     final result = ssl.EVP_DigestVerifyFinal(
       ctx,
-      scope.copyBytes(signature),
-      signature.length,
+      scope.copyBytes(signatureSnapshot),
+      signatureSnapshot.length,
     );
     if (result != 1) {
       // An invalid signature is a `false` result, not an error, so discard
